@@ -19,6 +19,15 @@ app.get('/', (req, res) => res.send('KB server is running'));
 
 // /kb/search endpoint
 app.post('/kb/search', async (req, res) => {
+  // --- Check Vapi secret ---
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace('Bearer ', '');
+
+  if (token !== process.env.VAPI_WEBHOOK_SECRET) {
+    console.log('Unauthorized request to KB');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   try {
     // Get user query
     const query = req.body?.message?.messages
@@ -30,7 +39,7 @@ app.post('/kb/search', async (req, res) => {
 
     // Fetch all documents for logging / fallback
     const { data: allDocs, error: allError } = await supabase
-      .from('documents') // use your schema or just 'documents'
+      .from('documents')
       .select('*');
 
     if (allError) {
